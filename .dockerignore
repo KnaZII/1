@@ -1,0 +1,14 @@
+.git
+website/node_modules
+website/dist
+website/.astro
+dist
+build
+*.egg-info
+__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.venv
+*.pyc
+tests/systemlab/output

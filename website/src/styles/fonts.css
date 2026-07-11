@@ -1,0 +1,41 @@
+/*
+ * Self-hosted fonts — no external requests to Google.
+ * Critical for users in censored regions where fonts.googleapis.com is blocked.
+ *
+ * Variable woff2 files cover all needed weights in a single file each.
+ * Fraunces: 400/500/600 normal + 400/500 italic
+ * Source Sans 3: 400/500/600
+ * JetBrains Mono: 400/500
+ */
+
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('/fonts/fraunces.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Fraunces';
+  font-style: italic;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/fraunces-italic.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('/fonts/source-sans-3.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono.woff2') format('woff2');
+}

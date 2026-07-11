@@ -1,0 +1,167 @@
+---
+/**
+ * Hero — warm editorial. Benefits-first messaging.
+ * "Share secure internet with your family" > "Deploy VLESS+Reality"
+ */
+import { createT } from '../i18n/t';
+
+interface Props {
+  locale?: string;
+}
+
+const { locale = 'en' } = Astro.props;
+const t = createT(locale);
+---
+
+<section class="hero">
+  <div class="container hero__content">
+    <p class="hero__kicker" data-t="hero.kicker">{t('hero.kicker', 'Open-source internet freedom tool')}</p>
+
+    <h1 class="hero__title" data-t="hero.title" set:html={t('hero.title', 'Share <em>secure internet</em> with the people you&nbsp;care&nbsp;about')} />
+
+    <p class="hero__sub" data-t="hero.sub">{t('hero.sub', 'One command sets up an undetectable proxy server — firewall, TLS, routing, all hardened by default. Share access via QR\u00a0codes.')}</p>
+
+    <div class="hero__actions">
+      <a href="#setup" class="hero__btn hero__btn--primary" data-t="hero.cta">{t('hero.cta', 'Get started')}</a>
+      <a href={`/docs/${locale}/getting-started/`} class="hero__btn hero__btn--secondary" data-astro-prefetch data-t="hero.docs">
+        {t('hero.docs', 'Read the docs')}
+      </a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="hero__preview-wrap">
+      <a href="/demo/" class="hero__preview" data-astro-prefetch>
+        <img
+          src="/img/connection-page.png"
+          alt="Connection page — what your friends receive"
+          loading="eager"
+          width="1200"
+          height="855"
+        />
+      </a>
+      <p class="hero__caption" data-t="hero.caption" set:html={t('hero.caption', 'What your friends receive — <a href="/demo/" data-astro-prefetch>see the demo</a>')} />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding: calc(56px + 48px) 0 40px;
+  }
+
+  .hero__content {
+    max-width: 640px;
+    margin-bottom: 48px;
+  }
+
+  .hero__kicker {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ac);
+    margin-bottom: 20px;
+  }
+
+  .hero__title {
+    margin-bottom: 20px;
+  }
+
+  .hero__title em {
+    font-style: italic;
+    color: var(--ac);
+  }
+
+  .hero__sub {
+    font-size: 1.1rem;
+    color: var(--t2);
+    max-width: 520px;
+    margin-bottom: 32px;
+    line-height: 1.7;
+  }
+
+  .hero__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .hero__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: var(--r);
+    font-family: var(--body);
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+
+  .hero__btn--primary {
+    background: var(--ac);
+    color: #fff;
+  }
+  .hero__btn--primary:hover {
+    background: var(--ac-hover);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .hero__btn--secondary {
+    background: var(--s1);
+    color: var(--t1);
+    border: 1px solid var(--b1);
+  }
+  .hero__btn--secondary:hover {
+    border-color: var(--b2);
+    background: var(--s2);
+    color: var(--t1);
+  }
+
+  .hero__preview-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .hero__preview {
+    display: block;
+    border-radius: var(--r2);
+    overflow: hidden;
+    border: 1px solid var(--b1);
+    box-shadow: var(--shadow-lg);
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .hero__preview:hover {
+    border-color: var(--b2);
+    box-shadow: 0 8px 32px rgba(26, 29, 46, 0.1);
+  }
+  .hero__preview img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .hero__caption {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--t3);
+    margin-top: 12px;
+  }
+  .hero__caption a {
+    color: var(--ac);
+  }
+
+  @media (max-width: 640px) {
+    .hero {
+      padding-top: calc(56px + 32px);
+    }
+    .hero__content {
+      margin-bottom: 36px;
+    }
+  }
+</style>

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Happ",
+    "platform": "All platforms",
+    "url": "https://happ.su/",
+    "urls": {
+      "iOS": "https://apps.apple.com/app/happ-proxy-utility/id6504287215",
+      "Android": "https://play.google.com/store/apps/details?id=com.happproxy"
+    },
+    "deeplink": "happ://add/{url_raw}"
+  }
+]

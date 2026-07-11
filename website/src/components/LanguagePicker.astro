@@ -1,0 +1,49 @@
+---
+/**
+ * LanguagePicker — client-side language switcher.
+ * Compact labels (EN/RU/فا/中文) with full names in aria-label.
+ * Persists choice in localStorage.
+ */
+---
+
+<div class="lang-picker" id="lang-picker">
+  <button class="lang-picker__btn lang-picker__btn--active" data-lang="en" aria-label="English">EN</button>
+  <button class="lang-picker__btn" data-lang="ru" aria-label="Русский">RU</button>
+  <button class="lang-picker__btn" data-lang="fa" aria-label="فارسی">فا</button>
+  <button class="lang-picker__btn" data-lang="zh" aria-label="中文">中文</button>
+</div>
+
+<style>
+  .lang-picker {
+    display: flex;
+    gap: 2px;
+    background: var(--s2);
+    border: 1px solid var(--b1);
+    border-radius: 6px;
+    padding: 2px;
+  }
+  .lang-picker__btn {
+    background: none;
+    border: none;
+    color: var(--t3);
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--body);
+    font-size: 0.7rem;
+    font-weight: 600;
+    transition: all 0.1s;
+  }
+  .lang-picker__btn:hover {
+    color: var(--t2);
+  }
+  .lang-picker__btn--active {
+    background: var(--ac2);
+    color: var(--ac);
+  }
+  .lang-picker__btn--unavailable {
+    opacity: 0.35;
+    cursor: default;
+    pointer-events: none;
+  }
+</style>

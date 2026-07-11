@@ -1,0 +1,23 @@
+---
+/**
+ * Docs index — detects preferred locale and redirects to getting-started.
+ * Falls back to English if no preference is stored.
+ */
+---
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content="0;url=/docs/en/getting-started/" />
+  <script is:inline>
+    (function() {
+      var lang = localStorage.getItem('meridian-lang');
+      var supported = ['en', 'ru', 'fa', 'zh'];
+      if (lang && supported.indexOf(lang) !== -1) {
+        location.replace('/docs/' + lang + '/getting-started/');
+      }
+    })();
+  </script>
+</head>
+<body></body>
+</html>

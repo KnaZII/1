@@ -1,0 +1,98 @@
+# System lab — multi-node Meridian deployment test
+#
+# Topology:
+#   controller (172.30.0.12) ──SSH──► exit-node  (172.30.0.10)
+#                             ──SSH──► relay-node (172.30.0.11)
+#   pebble (172.30.0.30) — local ACME CA (phase 2: domain-mode cert issuance)
+#
+# Usage:
+#   make system-lab
+#   # or: bash tests/systemlab/scripts/setup-fixtures.sh && \
+#   #     docker compose -f tests/systemlab/compose.yml up --build \
+#   #       --abort-on-container-exit --exit-code-from controller
+
+services:
+  exit-node:
+    build:
+      context: ../..
+      dockerfile: tests/systemlab/images/base/Dockerfile
+    hostname: exit-node
+    privileged: true
+    networks:
+      labnet:
+        ipv4_address: 172.30.0.10
+    tmpfs:
+      - /run
+      - /run/lock
+    volumes:
+      - exit-docker:/var/lib/docker
+    healthcheck:
+      test: ["CMD", "bash", "-c", "nc -z 127.0.0.1 22"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+      start_period: 15s
+
+  relay-node:
+    build:
+      context: ../..
+      dockerfile: tests/systemlab/images/base/Dockerfile
+    hostname: relay-node
+    privileged: true
+    networks:
+      labnet:
+        ipv4_address: 172.30.0.11
+    tmpfs:
+      - /run
+      - /run/lock
+    healthcheck:
+      test: ["CMD", "bash", "-c", "nc -z 127.0.0.1 22"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+      start_period: 15s
+
+  pebble:
+    image: ghcr.io/letsencrypt/pebble:latest
+    hostname: pebble
+    environment:
+      # Skip challenge validation — just issue certs
+      PEBBLE_VA_ALWAYS_VALID: "1"
+      PEBBLE_VA_NOSLEEP: "1"
+    networks:
+      labnet:
+        ipv4_address: 172.30.0.30
+
+  controller:
+    build:
+      context: ../..
+      dockerfile: tests/systemlab/images/controller/Dockerfile
+    hostname: controller
+    networks:
+      labnet:
+        ipv4_address: 172.30.0.12
+    depends_on:
+      exit-node:
+        condition: service_healthy
+      relay-node:
+        condition: service_healthy
+      pebble:
+        condition: service_started
+    environment:
+      EXIT_IP: "172.30.0.10"
+      RELAY_IP: "172.30.0.11"
+      MERIDIAN_HOME: /tmp/meridian-home
+      MERIDIAN_DISABLE_UPDATE_CHECK: "1"
+      MERIDIAN_ACME_SERVER: "https://172.30.0.30:14000/dir"
+      PYTHONUNBUFFERED: "1"
+    command: ["bash", "/workspace/tests/systemlab/scripts/controller-run.sh"]
+
+networks:
+  labnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  exit-docker:

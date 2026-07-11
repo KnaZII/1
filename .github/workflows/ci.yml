@@ -1,0 +1,266 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python-test:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package with dev dependencies
+        run: pip install ".[dev]"
+
+      - name: Run tests (skip integration — no Docker)
+        run: pytest tests/ -v --tb=short --ignore=tests/test_integration_3xui.py
+
+  python-lint:
+    name: Python Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install 'ruff>=0.4,<1.0'
+
+      - name: Ruff check
+        run: ruff check src/ tests/
+
+      - name: Ruff format check
+        run: ruff format --check src/ tests/
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Install package with dev dependencies
+        run: uv sync --extra dev
+
+      - name: Run mypy
+        run: uv run mypy src/meridian/
+
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate templates render
+        run: |
+          pip install jinja2
+          python3 tests/render_templates.py
+
+      - name: Verify connection-info app links match website data
+        run: |
+          python3 -c "
+          import json, re, sys
+          template = 'src/meridian/templates/connection-info.html.j2'
+          data_file = 'website/src/data/apps.json'
+          def extract_links(path):
+              content = open(path).read()
+              return sorted(set(re.findall(r'https://(?:play\.google\.com|apps\.apple\.com|github\.com/\S+/releases)[^\s\"<]*', content)))
+          def extract_json_links(path):
+              data = json.load(open(path))
+              return sorted(set(item['url'] for item in data if re.match(r'https://(?:play\.google\.com|apps\.apple\.com|github\.com/)', item['url'])))
+          baseline = extract_links(template)
+          data_links = extract_json_links(data_file)
+          if data_links != baseline:
+              print(f'MISMATCH between template and website/src/data/apps.json')
+              print(f'  Template: {baseline}')
+              print(f'  Data:     {data_links}')
+              sys.exit(1)
+          print(f'OK: App download links match between template and apps.json')
+          "
+
+      - name: Verify VERSION file format
+        run: |
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "VERSION file must be semver (X.Y.Z), got: $VERSION"
+            exit 1
+          fi
+          echo "OK: VERSION=$VERSION"
+
+      - name: Verify CHANGELOG has current version
+        run: |
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
+            echo "CHANGELOG.md missing entry for version $VERSION"
+            echo "Add a '## [$VERSION]' section to CHANGELOG.md before releasing"
+            exit 1
+          fi
+          echo "OK: CHANGELOG.md has entry for $VERSION"
+
+      - name: Install meridian for CLI validation
+        run: |
+          pip install uv
+          uv sync --extra dev
+
+      - name: Verify CLI flags are documented
+        run: uv run python tests/validate_cli_docs.py
+
+      - name: Verify _PWA_APPS matches apps.json
+        run: uv run python tests/validate_apps_sync.py
+
+  shellcheck:
+    name: Shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check script syntax
+        run: |
+          bash -n install.sh
+          bash -n setup.sh
+
+      - name: Shellcheck
+        run: |
+          shellcheck -e SC2086,SC2029,SC2087,SC2155 -S warning install.sh
+          shellcheck -e SC2086,SC2029,SC2087,SC2155 -S warning setup.sh
+
+  integration:
+    name: Integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install package with dev dependencies
+        run: pip install ".[dev]"
+
+      - name: Start 3x-ui container
+        run: docker compose -f docker-compose.test.yml up -d
+
+      - name: Wait for panel
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:2053/ 2>/dev/null || echo "000")
+            if [ "$code" != "000" ]; then
+              echo "Panel ready (HTTP $code)"
+              break
+            fi
+            echo "Waiting... attempt $i"
+            sleep 2
+          done
+
+      - name: Run integration tests
+        run: pytest tests/test_integration_3xui.py -v --tb=short
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.test.yml logs
+
+      - name: Stop container
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
+
+  e2e:
+    name: E2E Provisioner
+    runs-on: ubuntu-latest
+    needs: [python-test, python-lint]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Pre-pull 3x-ui image
+        run: docker pull ghcr.io/mhsanaei/3x-ui:2.8.11
+
+      - name: Run E2E tests
+        run: docker compose -f tests/e2e/docker-compose.e2e.yml up --build --abort-on-container-exit --exit-code-from e2e
+
+      - name: Dump E2E container logs on failure
+        if: failure()
+        run: |
+          docker compose -f tests/e2e/docker-compose.e2e.yml logs
+          docker logs 3x-ui 2>&1 || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -f 3x-ui 2>/dev/null || true
+          docker compose -f tests/e2e/docker-compose.e2e.yml down -v
+
+  system-lab:
+    name: System Lab
+    runs-on: ubuntu-latest
+    needs: [python-test, python-lint]
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Generate test fixtures
+        run: bash tests/systemlab/scripts/setup-fixtures.sh
+
+      - name: Run system lab
+        run: docker compose -f tests/systemlab/compose.yml up --build --abort-on-container-exit --exit-code-from controller
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose -f tests/systemlab/compose.yml logs
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f tests/systemlab/compose.yml down -v
+
+  website:
+    name: Website Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Build Astro site
+        run: cd website && npm ci && npm run build
+
+      - name: Type-check Astro components
+        run: cd website && npx astro check --minimumSeverity warning
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Validate PWA demo generation
+        run: |
+          sudo apt-get install -y qrencode
+          uv run meridian dev preview --output website/dist/demo
+          # Verify expected files exist
+          test -f website/dist/demo/index.html
+          test -f website/dist/demo/pwa/app.js
+          test -f website/dist/demo/pwa/styles.css
+          test -f website/dist/demo/pwa/icon.svg
+          test -f website/dist/demo/pwa/sw.js
+          # Verify SW is no-op (disabled for static hosting)
+          grep -q "SW disabled" website/dist/demo/pwa/sw.js
+          # Verify client index.html is non-empty (jinja2 rendered correctly)
+          find website/dist/demo -mindepth 2 -name 'index.html' -size +0c | grep -q .

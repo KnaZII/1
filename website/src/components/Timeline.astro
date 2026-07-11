@@ -1,0 +1,79 @@
+---
+interface Step {
+  title: string;
+  text: string;
+  titleKey?: string;
+  textKey?: string;
+}
+
+interface Props {
+  steps: Step[];
+}
+
+const { steps } = Astro.props;
+---
+
+<div class="timeline">
+  {steps.map((step, i) => (
+    <div class="timeline__item">
+      <div class="timeline__marker">
+        <div class="timeline__number">{i + 1}</div>
+        {i < steps.length - 1 && <div class="timeline__line"></div>}
+      </div>
+      <div class="timeline__content">
+        <strong {...(step.titleKey ? { 'data-t': step.titleKey } : {})}>{step.title}</strong>
+        <span {...(step.textKey ? { 'data-t': step.textKey } : {})} set:html={step.text} />
+      </div>
+    </div>
+  ))}
+</div>
+
+<style>
+  .timeline {
+    margin: 24px 0;
+  }
+  .timeline__item {
+    display: flex;
+    gap: 16px;
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+  .timeline__marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .timeline__number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--ac);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .timeline__line {
+    width: 1px;
+    flex: 1;
+    background: var(--b1);
+    min-height: 16px;
+  }
+  .timeline__content {
+    color: var(--t2);
+    padding-bottom: 20px;
+    padding-top: 3px;
+  }
+  .timeline__content strong {
+    color: var(--t1);
+    font-weight: 600;
+  }
+
+  [dir="rtl"] .timeline__item {
+    flex-direction: row-reverse;
+  }
+</style>

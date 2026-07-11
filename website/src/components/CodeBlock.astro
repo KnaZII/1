@@ -1,0 +1,79 @@
+---
+import CopyButton from './CopyButton.astro';
+
+interface Props {
+  code: string;
+  lang?: string;
+  label?: string;
+  labelKey?: string;
+}
+
+const { code, lang, label, labelKey } = Astro.props;
+---
+
+<div class="code-block">
+  {label && <div class="code-block__label" {...(labelKey ? { 'data-t': labelKey } : {})}>{label}</div>}
+  <div class="code-block__inner">
+    <pre><code class={lang ? `language-${lang}` : ''}>{code}</code></pre>
+    <CopyButton text={code} class="code-block__copy" />
+  </div>
+</div>
+
+<style>
+  .code-block {
+    position: relative;
+    margin: 16px 0;
+  }
+  .code-block__label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--t3);
+    padding: 10px 20px 0;
+    background: var(--code-bg);
+    border: 1px solid var(--code-br);
+    border-bottom: none;
+    border-radius: var(--r) var(--r) 0 0;
+  }
+  .code-block__inner {
+    background: var(--code-bg);
+    border: 1px solid var(--code-br);
+    border-radius: var(--r);
+    padding: 16px 20px;
+    position: relative;
+  }
+  .code-block__label + .code-block__inner {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: none;
+  }
+  pre {
+    font-family: var(--mono);
+    font-size: 0.84rem;
+    line-height: 1.65;
+    color: var(--t1);
+    white-space: pre-wrap;
+    word-break: break-all;
+    padding-right: 70px;
+    margin: 0;
+  }
+  .code-block__copy {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  [dir="rtl"] pre {
+    direction: ltr;
+    text-align: left;
+    unicode-bidi: embed;
+    padding-right: 0;
+    padding-left: 70px;
+  }
+  [dir="rtl"] .code-block__copy {
+    right: auto;
+    left: 10px;
+  }
+</style>

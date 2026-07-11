@@ -1,0 +1,84 @@
+---
+/**
+ * Footer — warm, understated.
+ */
+---
+
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__content">
+      <p class="footer__tagline" data-t="footer.tagline">
+        Open source. No tracking. No accounts.
+      </p>
+
+      <div class="footer__links">
+        <a href="https://github.com/uburuntu/meridian" target="_blank" rel="noopener">GitHub</a>
+        <span class="footer__sep">&middot;</span>
+        <a href="https://github.com/uburuntu/meridian/issues" target="_blank" rel="noopener">Issues</a>
+        <span class="footer__sep">&middot;</span>
+        <a href="/docs/" data-astro-prefetch>Docs</a>
+      </div>
+
+      <div class="footer__version" id="footer-version"></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  fetch('/version')
+    .then(r => r.ok ? r.text() : null)
+    .then(v => {
+      if (v) {
+        const el = document.getElementById('footer-version');
+        if (el) el.textContent = `v${v.trim()}`;
+      }
+    })
+    .catch(() => {});
+</script>
+
+<style>
+  .footer {
+    padding: 0 24px;
+    margin-top: 32px;
+  }
+  .footer__inner {
+    max-width: 960px;
+    margin: 0 auto;
+    border-top: 1px solid var(--b1);
+  }
+  .footer__content {
+    padding: 32px 0 40px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .footer__tagline {
+    font-size: 0.85rem;
+    color: var(--t3);
+    font-style: italic;
+    font-family: var(--heading);
+  }
+  .footer__links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+  }
+  .footer__links a {
+    color: var(--t2);
+    transition: color 0.12s;
+  }
+  .footer__links a:hover { color: var(--ac); }
+  .footer__sep {
+    color: var(--b2);
+    font-size: 0.6rem;
+  }
+  .footer__version {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--t3);
+    letter-spacing: 0.03em;
+  }
+</style>
